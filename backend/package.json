@@ -1,0 +1,21 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "mini_sql_project",
+  "license": "ISC",
+  "author": "Satyam kumar singh",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11"
+  }
+}
