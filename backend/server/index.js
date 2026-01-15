@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use("/api/health", queryRoutes);
+app.use("/api/query", queryRoutes);
 
 const start = async () => {
     try {
