@@ -1,0 +1,227 @@
+import { parse } from './parser/parser.js';
+import { executeSelect } from './executor/selectExecutor.js';
+import storageManager from './storage/storageManager.js';
+
+export function executeSQL(sql) {
+    try {
+        const ast = parse(sql);
+        
+        switch (ast.type) {
+            case 'SELECT':
+                return executeSelect(ast);
+            
+            case 'INSERT':
+                return executeInsert(ast);
+            
+            case 'CREATE':
+                return executeCreate(ast);
+            
+            case 'DELETE':
+                return executeDelete(ast);
+            
+            case 'UPDATE':
+                return executeUpdate(ast);
+            
+            default:
+                throw new Error(`Unsupported query type: ${ast.type}`);
+        }
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message,
+            stack: error.stack
+        };
+    }
+}
+
+function executeInsert(ast) {
+    const { table, values } = ast;
+
+    if (!storageManager.tableExists(table)) {
+        throw new Error(`Table '${table}' does not exist`);
+    }
+
+    const schema = storageManager.getSchema(table);
+    const columns = schema.columns;
+
+    if (values.length !== columns.length) {
+        throw new Error(`Expected ${columns.length} values, got ${values.length}`);
+    }
+
+    const row = {};
+    columns.forEach((col, index) => {
+        row[col.name] = values[index];
+    });
+
+    storageManager.insertRow(table, row);
+
+    return {
+        success: true,
+        message: `Inserted 1 row into '${table}'`,
+        rowCount: 1
+    };
+}
+
+function executeCreate(ast) {
+    const { table, columns } = ast;
+
+    if (storageManager.tableExists(table)) {
+        throw new Error(`Table '${table}' already exists`);
+    }
+
+    storageManager.createTable(table, columns);
+
+    return {
+        success: true,
+        message: `Table '${table}' created successfully`,
+        table: table,
+        columns: columns
+    };
+}
+
+function executeDelete(ast) {
+    const { table, where } = ast;
+
+    if (!storageManager.tableExists(table)) {
+        throw new Error(`Table '${table}' does not exist`);
+    }
+
+    if (!where) {
+        const tableData = storageManager.getTable(table);
+        const rowCount = tableData.rows.length;
+        storageManager.truncateTable(table);
+        
+        return {
+            success: true,
+            message: `Deleted all rows from '${table}'`,
+            deletedCount: rowCount
+        };
+    }
+
+    const conditionFn = (row) => {
+        return evaluateCondition(row, where);
+    };
+
+    const result = storageManager.deleteRows(table, conditionFn);
+
+    return {
+        success: true,
+        message: `Deleted ${result.deletedCount} rows from '${table}'`,
+        deletedCount: result.deletedCount
+    };
+}
+
+function executeUpdate(ast) {
+    const { table, updates, where } = ast;
+
+    if (!storageManager.tableExists(table)) {
+        throw new Error(`Table '${table}' does not exist`);
+    }
+
+    const conditionFn = where ? (row) => evaluateCondition(row, where) : () => true;
+
+    const updateFn = (row) => {
+        const updatedRow = { ...row };
+        updates.forEach(update => {
+            updatedRow[update.column] = update.value;
+        });
+        return updatedRow;
+    };
+
+    const result = storageManager.updateRows(table, conditionFn, updateFn);
+
+    return {
+        success: true,
+        message: `Updated ${result.updatedCount} rows in '${table}'`,
+        updatedCount: result.updatedCount
+    };
+}
+
+function evaluateCondition(row, condition) {
+    if (condition.type === 'COMPOUND') {
+        const { conditions } = condition;
+        let result = evaluateSimpleCondition(row, conditions[0]);
+
+        for (let i = 1; i < conditions.length; i++) {
+            const { logicalOperator, condition: cond } = conditions[i];
+            const condResult = evaluateSimpleCondition(row, cond);
+
+            if (logicalOperator === 'AND') {
+                result = result && condResult;
+            } else if (logicalOperator === 'OR') {
+                result = result || condResult;
+            }
+        }
+
+        return result;
+    }
+
+    return evaluateSimpleCondition(row, condition);
+}
+
+function evaluateSimpleCondition(row, condition) {
+    const { column, operator, value } = condition;
+
+    if (!(column in row)) {
+        throw new Error(`Column '${column}' does not exist`);
+    }
+
+    const rowValue = row[column];
+
+    switch (operator) {
+        case '=':
+            return rowValue === value;
+        case '!=':
+        case '<>':
+            return rowValue !== value;
+        case '<':
+            return rowValue < value;
+        case '>':
+            return rowValue > value;
+        case '<=':
+            return rowValue <= value;
+        case '>=':
+            return rowValue >= value;
+        default:
+            throw new Error(`Unsupported operator: ${operator}`);
+    }
+}
+
+export function listTables() {
+    return storageManager.listAllTables();
+}
+
+export function getTableInfo(tableName) {
+    if (!storageManager.tableExists(tableName)) {
+        throw new Error(`Table '${tableName}' does not exist`);
+    }
+
+    const schema = storageManager.getSchema(tableName);
+    const stats = storageManager.getTableStats(tableName);
+
+    return {
+        table: tableName,
+        schema: schema,
+        stats: stats
+    };
+}
+
+export function dropTable(tableName) {
+    if (!storageManager.tableExists(tableName)) {
+        throw new Error(`Table '${tableName}' does not exist`);
+    }
+
+    storageManager.deleteTable(tableName);
+
+    return {
+        success: true,
+        message: `Table '${tableName}' dropped successfully`
+    };
+}
+
+export default {
+    executeSQL,
+    listTables,
+    getTableInfo,
+    dropTable
+};
