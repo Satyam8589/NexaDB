@@ -1,5 +1,6 @@
 import { parse } from './parser/parser.js';
 import { executeSelect } from './executor/selectExecutor.js';
+import { executeInsert } from './executor/insertExecutor.js';
 import storageManager from './storage/storageManager.js';
 
 export function executeSQL(sql) {
@@ -32,34 +33,6 @@ export function executeSQL(sql) {
             stack: error.stack
         };
     }
-}
-
-function executeInsert(ast) {
-    const { table, values } = ast;
-
-    if (!storageManager.tableExists(table)) {
-        throw new Error(`Table '${table}' does not exist`);
-    }
-
-    const schema = storageManager.getSchema(table);
-    const columns = schema.columns;
-
-    if (values.length !== columns.length) {
-        throw new Error(`Expected ${columns.length} values, got ${values.length}`);
-    }
-
-    const row = {};
-    columns.forEach((col, index) => {
-        row[col.name] = values[index];
-    });
-
-    storageManager.insertRow(table, row);
-
-    return {
-        success: true,
-        message: `Inserted 1 row into '${table}'`,
-        rowCount: 1
-    };
 }
 
 function executeCreate(ast) {
