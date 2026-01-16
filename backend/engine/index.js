@@ -1,6 +1,7 @@
 import { parse } from './parser/parser.js';
 import { executeSelect } from './executor/selectExecutor.js';
 import { executeInsert } from './executor/insertExecutor.js';
+import { executeCreate } from './executor/createExecutor.js';
 import storageManager from './storage/storageManager.js';
 
 export function executeSQL(sql) {
@@ -35,22 +36,6 @@ export function executeSQL(sql) {
     }
 }
 
-function executeCreate(ast) {
-    const { table, columns } = ast;
-
-    if (storageManager.tableExists(table)) {
-        throw new Error(`Table '${table}' already exists`);
-    }
-
-    storageManager.createTable(table, columns);
-
-    return {
-        success: true,
-        message: `Table '${table}' created successfully`,
-        table: table,
-        columns: columns
-    };
-}
 
 function executeDelete(ast) {
     const { table, where } = ast;
