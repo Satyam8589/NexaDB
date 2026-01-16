@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import config from '../../config/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATA_DIR = path.join(__dirname, '../../data');
+// Use configurable data directory
+const DATA_DIR = config.dataDirectory;
 
 const ensureDataDirectory = () => {
     if (!fs.existsSync(DATA_DIR)) {

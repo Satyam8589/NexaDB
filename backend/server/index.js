@@ -12,6 +12,20 @@ app.use(cors());
 
 app.use("/api/query", queryRoutes);
 
+app.get("/", (req, res) => {
+    return res.status(200).json({
+        message: "NexaDB Server is running",
+        version: "1.0.0",
+        endpoints: {
+            query: "POST /api/query",
+            tables: "GET /api/query/tables",
+            schema: "GET /api/query/schema/:tableName",
+            analyze: "POST /api/query/analyze",
+            plan: "POST /api/query/plan"
+        }
+    });
+});
+
 const start = async () => {
     try {
         app.listen(process.env.PORT || 3000, () => {
