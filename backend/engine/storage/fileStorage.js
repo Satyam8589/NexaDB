@@ -10,7 +10,7 @@ const DATA_DIR = path.join(__dirname, '../../data');
 const ensureDataDirectory = () => {
     if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        console.log(`📁 Created data directory: ${DATA_DIR}`);
+        console.log(`Created data directory: ${DATA_DIR}`);
     }
 };
 
@@ -47,7 +47,7 @@ export const createTable = (tableName, columns) => {
         const tablePath = getTablePath(tableName);
         fs.writeFileSync(tablePath, JSON.stringify(tableData, null, 2), 'utf-8');
 
-        console.log(`✅ Table '${tableName}' created successfully`);
+        console.log(`Table '${tableName}' created successfully`);
         
         return {
             success: true,
@@ -56,7 +56,7 @@ export const createTable = (tableName, columns) => {
         };
 
     } catch (error) {
-        console.error(`❌ Error creating table '${tableName}':`, error.message);
+        console.error(`Error creating table '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -71,12 +71,12 @@ export const readTable = (tableName) => {
         const rawData = fs.readFileSync(tablePath, 'utf-8');
         const tableData = JSON.parse(rawData);
 
-        console.log(`📖 Read table '${tableName}' (${tableData.rows.length} rows)`);
+        console.log(`Read table '${tableName}' (${tableData.rows.length} rows)`);
 
         return tableData;
 
     } catch (error) {
-        console.error(`❌ Error reading table '${tableName}':`, error.message);
+        console.error(`Error reading table '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -92,7 +92,7 @@ export const writeTable = (tableName, tableData) => {
         const tablePath = getTablePath(tableName);
         fs.writeFileSync(tablePath, JSON.stringify(tableData, null, 2), 'utf-8');
 
-        console.log(`💾 Wrote table '${tableName}' (${tableData.rows.length} rows)`);
+        console.log(`Wrote table '${tableName}' (${tableData.rows.length} rows)`);
 
         return {
             success: true,
@@ -101,7 +101,7 @@ export const writeTable = (tableName, tableData) => {
         };
 
     } catch (error) {
-        console.error(`❌ Error writing table '${tableName}':`, error.message);
+        console.error(`Error writing table '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -114,7 +114,7 @@ export const insertRow = (tableName, rowData) => {
 
         writeTable(tableName, tableData);
 
-        console.log(`➕ Inserted row into '${tableName}'`);
+        console.log(`Inserted row into '${tableName}'`);
 
         return {
             success: true,
@@ -123,7 +123,7 @@ export const insertRow = (tableName, rowData) => {
         };
 
     } catch (error) {
-        console.error(`❌ Error inserting row into '${tableName}':`, error.message);
+        console.error(`Error inserting row into '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -133,7 +133,7 @@ export const getAllRows = (tableName) => {
         const tableData = readTable(tableName);
         return tableData.rows;
     } catch (error) {
-        console.error(`❌ Error getting rows from '${tableName}':`, error.message);
+        console.error(`Error getting rows from '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -143,7 +143,7 @@ export const getTableSchema = (tableName) => {
         const tableData = readTable(tableName);
         return tableData.schema;
     } catch (error) {
-        console.error(`❌ Error getting schema for '${tableName}':`, error.message);
+        console.error(`Error getting schema for '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -157,7 +157,7 @@ export const deleteTable = (tableName) => {
         const tablePath = getTablePath(tableName);
         fs.unlinkSync(tablePath);
 
-        console.log(`🗑️ Table '${tableName}' deleted successfully`);
+        console.log(`Table '${tableName}' deleted successfully`);
 
         return {
             success: true,
@@ -165,7 +165,7 @@ export const deleteTable = (tableName) => {
         };
 
     } catch (error) {
-        console.error(`❌ Error deleting table '${tableName}':`, error.message);
+        console.error(`Error deleting table '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -180,12 +180,12 @@ export const listAllTables = () => {
             .filter(file => file.endsWith('.json'))
             .map(file => file.replace('.json', ''));
 
-        console.log(`📋 Found ${tables.length} tables: ${tables.join(', ')}`);
+        console.log(`Found ${tables.length} tables: ${tables.join(', ')}`);
 
         return tables;
 
     } catch (error) {
-        console.error('❌ Error listing tables:', error.message);
+        console.error('Error listing tables:', error.message);
         throw error;
     }
 };
@@ -207,7 +207,7 @@ export const getTableStats = (tableName) => {
         };
 
     } catch (error) {
-        console.error(`❌ Error getting stats for '${tableName}':`, error.message);
+        console.error(`Error getting stats for '${tableName}':`, error.message);
         throw error;
     }
 };
