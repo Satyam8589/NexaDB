@@ -3,6 +3,7 @@ import { executeSelect } from './executor/selectExecutor.js';
 import { executeInsert } from './executor/insertExecutor.js';
 import { executeCreate } from './executor/createExecutor.js';
 import { executeUpdate } from './executor/updateExecutor.js';
+import { executeDelete } from './executor/deleteExecutor.js';
 import storageManager from './storage/storageManager.js';
 
 export function executeSQL(sql) {
@@ -37,38 +38,6 @@ export function executeSQL(sql) {
     }
 }
 
-
-function executeDelete(ast) {
-    const { table, where } = ast;
-
-    if (!storageManager.tableExists(table)) {
-        throw new Error(`Table '${table}' does not exist`);
-    }
-
-    if (!where) {
-        const tableData = storageManager.getTable(table);
-        const rowCount = tableData.rows.length;
-        storageManager.truncateTable(table);
-        
-        return {
-            success: true,
-            message: `Deleted all rows from '${table}'`,
-            deletedCount: rowCount
-        };
-    }
-
-    const conditionFn = (row) => {
-        return evaluateCondition(row, where);
-    };
-
-    const result = storageManager.deleteRows(table, conditionFn);
-
-    return {
-        success: true,
-        message: `Deleted ${result.deletedCount} rows from '${table}'`,
-        deletedCount: result.deletedCount
-    };
-}
 
 
 function evaluateCondition(row, condition) {
