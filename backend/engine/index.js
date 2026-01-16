@@ -2,6 +2,7 @@ import { parse } from './parser/parser.js';
 import { executeSelect } from './executor/selectExecutor.js';
 import { executeInsert } from './executor/insertExecutor.js';
 import { executeCreate } from './executor/createExecutor.js';
+import { executeUpdate } from './executor/updateExecutor.js';
 import storageManager from './storage/storageManager.js';
 
 export function executeSQL(sql) {
@@ -69,31 +70,6 @@ function executeDelete(ast) {
     };
 }
 
-function executeUpdate(ast) {
-    const { table, updates, where } = ast;
-
-    if (!storageManager.tableExists(table)) {
-        throw new Error(`Table '${table}' does not exist`);
-    }
-
-    const conditionFn = where ? (row) => evaluateCondition(row, where) : () => true;
-
-    const updateFn = (row) => {
-        const updatedRow = { ...row };
-        updates.forEach(update => {
-            updatedRow[update.column] = update.value;
-        });
-        return updatedRow;
-    };
-
-    const result = storageManager.updateRows(table, conditionFn, updateFn);
-
-    return {
-        success: true,
-        message: `Updated ${result.updatedCount} rows in '${table}'`,
-        updatedCount: result.updatedCount
-    };
-}
 
 function evaluateCondition(row, condition) {
     if (condition.type === 'COMPOUND') {
