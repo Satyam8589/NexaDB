@@ -12,6 +12,8 @@ export function executeSelect(ast) {
     }
 
     let rows = storageManager.getAllRows(table);
+    const tableSchema = storageManager.getSchema(table);
+    const allColumnNames = tableSchema.columns.map(col => col.name);
 
     if (where) {
         rows = applyWhereClause(rows, where);
@@ -21,6 +23,7 @@ export function executeSelect(ast) {
         return {
             success: true,
             data: rows,
+            columns: allColumnNames,
             rowCount: rows.length
         };
     }
@@ -30,6 +33,7 @@ export function executeSelect(ast) {
     return {
         success: true,
         data: projectedRows,
+        columns: columns,
         rowCount: projectedRows.length
     };
 }

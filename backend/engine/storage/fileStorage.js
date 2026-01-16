@@ -8,16 +8,61 @@ const __dirname = path.dirname(__filename);
 
 // Use configurable data directory
 const DATA_DIR = config.dataDirectory;
+let currentDb = 'default';
 
-const ensureDataDirectory = () => {
-    if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-        console.log(`Created data directory: ${DATA_DIR}`);
+const getDbPath = (dbName = currentDb) => {
+    return path.join(DATA_DIR, dbName.toLowerCase());
+};
+
+const ensureDataDirectory = (dbName = currentDb) => {
+    const dbPath = getDbPath(dbName);
+    if (!fs.existsSync(dbPath)) {
+        fs.mkdirSync(dbPath, { recursive: true });
+        console.log(`Created database directory: ${dbPath}`);
     }
 };
 
-const getTablePath = (tableName) => {
-    return path.join(DATA_DIR, `${tableName.toLowerCase()}.json`);
+const getTablePath = (tableName, dbName = currentDb) => {
+    return path.join(getDbPath(dbName), `${tableName.toLowerCase()}.json`);
+};
+
+export const setCurrentDatabase = (dbName) => {
+    ensureDataDirectory(dbName);
+    currentDb = dbName.toLowerCase();
+    return { success: true, message: `Switched to database '${currentDb}'` };
+};
+
+export const getCurrentDatabase = () => {
+    return currentDb;
+};
+
+export const createDatabase = (dbName) => {
+    const dbPath = getDbPath(dbName);
+    if (fs.existsSync(dbPath)) {
+        throw new Error(`Database '${dbName}' already exists`);
+    }
+    fs.mkdirSync(dbPath, { recursive: true });
+    return { success: true, message: `Database '${dbName}' created successfully` };
+};
+
+export const dropDatabase = (dbName) => {
+    const dbPath = getDbPath(dbName);
+    if (!fs.existsSync(dbPath)) {
+        throw new Error(`Database '${dbName}' does not exist`);
+    }
+    // Caution: fs.rmSync available in newer Node versions
+    fs.rmSync(dbPath, { recursive: true, force: true });
+    if (currentDb === dbName.toLowerCase()) {
+        currentDb = 'default';
+        ensureDataDirectory(currentDb);
+    }
+    return { success: true, message: `Database '${dbName}' dropped successfully` };
+};
+
+export const listDatabases = () => {
+    ensureDataDirectory('default');
+    const files = fs.readdirSync(DATA_DIR);
+    return files.filter(file => fs.statSync(path.join(DATA_DIR, file)).isDirectory());
 };
 
 export const tableExists = (tableName) => {
@@ -30,7 +75,7 @@ export const createTable = (tableName, columns) => {
         ensureDataDirectory();
 
         if (tableExists(tableName)) {
-            throw new Error(`Table '${tableName}' already exists`);
+            throw new Error(`Table '${tableName}' already exists in database '${currentDb}'`);
         }
 
         if (!Array.isArray(columns) || columns.length === 0) {
@@ -49,11 +94,11 @@ export const createTable = (tableName, columns) => {
         const tablePath = getTablePath(tableName);
         fs.writeFileSync(tablePath, JSON.stringify(tableData, null, 2), 'utf-8');
 
-        console.log(`Table '${tableName}' created successfully`);
+        console.log(`Table '${tableName}' created successfully in database '${currentDb}'`);
         
         return {
             success: true,
-            message: `Table '${tableName}' created successfully`,
+            message: `Table '${tableName}' created successfully in database '${currentDb}'`,
             tableName: tableName.toLowerCase()
         };
 
@@ -66,14 +111,12 @@ export const createTable = (tableName, columns) => {
 export const readTable = (tableName) => {
     try {
         if (!tableExists(tableName)) {
-            throw new Error(`Table '${tableName}' does not exist`);
+            throw new Error(`Table '${tableName}' does not exist in database '${currentDb}'`);
         }
 
         const tablePath = getTablePath(tableName);
         const rawData = fs.readFileSync(tablePath, 'utf-8');
         const tableData = JSON.parse(rawData);
-
-        console.log(`Read table '${tableName}' (${tableData.rows.length} rows)`);
 
         return tableData;
 
@@ -87,14 +130,8 @@ export const writeTable = (tableName, tableData) => {
     try {
         ensureDataDirectory();
 
-        if (!tableData.schema || !tableData.rows) {
-            throw new Error('Invalid table data structure. Must have schema and rows');
-        }
-
         const tablePath = getTablePath(tableName);
         fs.writeFileSync(tablePath, JSON.stringify(tableData, null, 2), 'utf-8');
-
-        console.log(`Wrote table '${tableName}' (${tableData.rows.length} rows)`);
 
         return {
             success: true,
@@ -111,12 +148,8 @@ export const writeTable = (tableName, tableData) => {
 export const insertRow = (tableName, rowData) => {
     try {
         const tableData = readTable(tableName);
-
         tableData.rows.push(rowData);
-
         writeTable(tableName, tableData);
-
-        console.log(`Inserted row into '${tableName}'`);
 
         return {
             success: true,
@@ -125,29 +158,18 @@ export const insertRow = (tableName, rowData) => {
         };
 
     } catch (error) {
-        console.error(`Error inserting row into '${tableName}':`, error.message);
         throw error;
     }
 };
 
 export const getAllRows = (tableName) => {
-    try {
-        const tableData = readTable(tableName);
-        return tableData.rows;
-    } catch (error) {
-        console.error(`Error getting rows from '${tableName}':`, error.message);
-        throw error;
-    }
+    const tableData = readTable(tableName);
+    return tableData.rows;
 };
 
 export const getTableSchema = (tableName) => {
-    try {
-        const tableData = readTable(tableName);
-        return tableData.schema;
-    } catch (error) {
-        console.error(`Error getting schema for '${tableName}':`, error.message);
-        throw error;
-    }
+    const tableData = readTable(tableName);
+    return tableData.schema;
 };
 
 export const deleteTable = (tableName) => {
@@ -159,15 +181,12 @@ export const deleteTable = (tableName) => {
         const tablePath = getTablePath(tableName);
         fs.unlinkSync(tablePath);
 
-        console.log(`Table '${tableName}' deleted successfully`);
-
         return {
             success: true,
             message: `Table '${tableName}' deleted successfully`
         };
 
     } catch (error) {
-        console.error(`Error deleting table '${tableName}':`, error.message);
         throw error;
     }
 };
@@ -175,20 +194,15 @@ export const deleteTable = (tableName) => {
 export const listAllTables = () => {
     try {
         ensureDataDirectory();
+        const dbPath = getDbPath();
+        const files = fs.readdirSync(dbPath);
 
-        const files = fs.readdirSync(DATA_DIR);
-
-        const tables = files
+        return files
             .filter(file => file.endsWith('.json'))
             .map(file => file.replace('.json', ''));
 
-        console.log(`Found ${tables.length} tables: ${tables.join(', ')}`);
-
-        return tables;
-
     } catch (error) {
-        console.error('Error listing tables:', error.message);
-        throw error;
+        return [];
     }
 };
 
@@ -200,6 +214,7 @@ export const getTableStats = (tableName) => {
 
         return {
             tableName: tableName.toLowerCase(),
+            database: currentDb,
             rowCount: tableData.rows.length,
             columnCount: tableData.schema.columns.length,
             fileSizeBytes: stats.size,
@@ -209,9 +224,9 @@ export const getTableStats = (tableName) => {
         };
 
     } catch (error) {
-        console.error(`Error getting stats for '${tableName}':`, error.message);
         throw error;
     }
 };
 
-ensureDataDirectory();
+// Initialize with default database
+ensureDataDirectory('default');

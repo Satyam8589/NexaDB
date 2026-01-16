@@ -5,7 +5,8 @@ const SQL_KEYWORDS = new Set([
     'ORDER', 'BY', 'ASC', 'DESC', 'LIMIT', 'OFFSET',
     'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'ON',
     'GROUP', 'HAVING', 'DISTINCT', 'AS', 'IN', 'LIKE',
-    'BETWEEN', 'IS', 'EXISTS', 'ALL', 'ANY', 'SOME'
+    'BETWEEN', 'IS', 'EXISTS', 'ALL', 'ANY', 'SOME',
+    'USE', 'SHOW', 'DATABASES', 'DATABASE', 'DROP', 'TABLES'
 ]);
 
 const DATA_TYPES = new Set([

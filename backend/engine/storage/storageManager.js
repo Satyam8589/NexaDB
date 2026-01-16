@@ -21,13 +21,35 @@ class StorageManager {
     clearCache(tableName = null) {
         if (tableName) {
             this.cache.delete(tableName.toLowerCase());
-            console.log(`Cache cleared for table '${tableName}'`);
         } else {
             this.cache.clear();
-            console.log('All cache cleared');
         }
     }
 
+    // Database Management
+    createDatabase(dbName) {
+        return fileStorage.createDatabase(dbName);
+    }
+
+    dropDatabase(dbName) {
+        this.cache.clear(); // Clear all cache when switching or dropping
+        return fileStorage.dropDatabase(dbName);
+    }
+
+    useDatabase(dbName) {
+        this.cache.clear(); // Clear cache when switching databases
+        return fileStorage.setCurrentDatabase(dbName);
+    }
+
+    getCurrentDatabase() {
+        return fileStorage.getCurrentDatabase();
+    }
+
+    listDatabases() {
+        return fileStorage.listDatabases();
+    }
+
+    // Table Management
     createTable(tableName, columns) {
         const result = fileStorage.createTable(tableName, columns);
         this.clearCache(tableName);
@@ -42,7 +64,6 @@ class StorageManager {
         const normalizedName = tableName.toLowerCase();
 
         if (this.cacheEnabled && this.cache.has(normalizedName)) {
-            console.log(`Cache hit for table '${tableName}'`);
             return this.cache.get(normalizedName);
         }
 
@@ -50,7 +71,6 @@ class StorageManager {
 
         if (this.cacheEnabled) {
             this.cache.set(normalizedName, tableData);
-            console.log(`Cached table '${tableName}'`);
         }
 
         return tableData;
@@ -78,8 +98,6 @@ class StorageManager {
         const result = fileStorage.writeTable(tableName, tableData);
         
         this.clearCache(tableName);
-        
-        console.log(`Inserted ${rowsArray.length} rows into '${tableName}'`);
         
         return {
             success: true,
@@ -129,8 +147,6 @@ class StorageManager {
         
         this.clearCache(tableName);
         
-        console.log(`Truncated table '${tableName}' (removed ${rowCount} rows)`);
-        
         return {
             success: true,
             message: `Table '${tableName}' truncated`,
@@ -153,8 +169,6 @@ class StorageManager {
         fileStorage.writeTable(tableName, tableData);
         this.clearCache(tableName);
 
-        console.log(`Updated ${updatedCount} rows in '${tableName}'`);
-
         return {
             success: true,
             message: `${updatedCount} rows updated in '${tableName}'`,
@@ -172,8 +186,6 @@ class StorageManager {
 
         fileStorage.writeTable(tableName, tableData);
         this.clearCache(tableName);
-
-        console.log(`Deleted ${deletedCount} rows from '${tableName}'`);
 
         return {
             success: true,
@@ -198,35 +210,6 @@ class StorageManager {
             acc[col.name] = col.type;
             return acc;
         }, {});
-    }
-
-    backup(tableName, backupPath) {
-        const tableData = fileStorage.readTable(tableName);
-        fs.writeFileSync(backupPath, JSON.stringify(tableData, null, 2), 'utf-8');
-        
-        console.log(`Backed up table '${tableName}' to ${backupPath}`);
-        
-        return {
-            success: true,
-            message: `Table '${tableName}' backed up successfully`,
-            backupPath
-        };
-    }
-
-    restore(tableName, backupPath) {
-        const rawData = fs.readFileSync(backupPath, 'utf-8');
-        const tableData = JSON.parse(rawData);
-        
-        fileStorage.writeTable(tableName, tableData);
-        this.clearCache(tableName);
-        
-        console.log(`Restored table '${tableName}' from ${backupPath}`);
-        
-        return {
-            success: true,
-            message: `Table '${tableName}' restored successfully`,
-            rowCount: tableData.rows.length
-        };
     }
 }
 

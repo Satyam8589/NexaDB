@@ -11,6 +11,30 @@ export function executeSQL(sql) {
         const ast = parse(sql);
         
         switch (ast.type) {
+            case 'USE':
+                return storageManager.useDatabase(ast.database);
+            
+            case 'SHOW_DATABASES':
+                return {
+                    success: true,
+                    data: storageManager.listDatabases()
+                };
+            
+            case 'SHOW_TABLES':
+                return {
+                    success: true,
+                    data: storageManager.listAllTables()
+                };
+
+            case 'CREATE_DATABASE':
+                return storageManager.createDatabase(ast.database);
+            
+            case 'DROP_DATABASE':
+                return storageManager.dropDatabase(ast.database);
+
+            case 'DROP_TABLE':
+                return dropTable(ast.table);
+
             case 'SELECT':
                 return executeSelect(ast);
             

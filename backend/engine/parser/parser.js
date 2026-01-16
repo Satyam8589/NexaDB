@@ -60,12 +60,55 @@ class Parser {
                 return this.parseInsert();
             case 'CREATE':
                 return this.parseCreate();
+            case 'DROP':
+                return this.parseDrop();
+            case 'USE':
+                return this.parseUse();
+            case 'SHOW':
+                return this.parseShow();
             case 'DELETE':
                 return this.parseDelete();
             case 'UPDATE':
                 return this.parseUpdate();
             default:
                 throw new Error(`Unsupported statement: ${token.value}`);
+        }
+    }
+
+    parseUse() {
+        this.expect('KEYWORD', 'USE');
+        const dbName = this.expect('IDENTIFIER').value;
+        return {
+            type: 'USE',
+            database: dbName
+        };
+    }
+
+    parseShow() {
+        this.expect('KEYWORD', 'SHOW');
+        const target = this.expect('KEYWORD').value;
+        
+        if (target === 'DATABASES') {
+            return { type: 'SHOW_DATABASES' };
+        } else if (target === 'TABLES') {
+            return { type: 'SHOW_TABLES' };
+        } else {
+            throw new Error(`Unsupported SHOW target: ${target}`);
+        }
+    }
+
+    parseDrop() {
+        this.expect('KEYWORD', 'DROP');
+        const target = this.expect('KEYWORD').value;
+        
+        if (target === 'DATABASE') {
+            const dbName = this.expect('IDENTIFIER').value;
+            return { type: 'DROP_DATABASE', database: dbName };
+        } else if (target === 'TABLE') {
+            const tableName = this.expect('IDENTIFIER').value;
+            return { type: 'DROP_TABLE', table: tableName };
+        } else {
+            throw new Error(`Unsupported DROP target: ${target}`);
         }
     }
 
@@ -113,21 +156,27 @@ class Parser {
 
     parseCreate() {
         this.expect('KEYWORD', 'CREATE');
-        this.expect('KEYWORD', 'TABLE');
+        const target = this.expect('KEYWORD').value;
 
-        const table = this.expect('IDENTIFIER').value;
-
-        this.expect('OPERATOR', '(');
-
-        const columns = this.parseColumnDefinitions();
-
-        this.expect('OPERATOR', ')');
-
-        return {
-            type: 'CREATE',
-            table,
-            columns
-        };
+        if (target === 'DATABASE') {
+            const dbName = this.expect('IDENTIFIER').value;
+            return {
+                type: 'CREATE_DATABASE',
+                database: dbName
+            };
+        } else if (target === 'TABLE') {
+            const table = this.expect('IDENTIFIER').value;
+            this.expect('OPERATOR', '(');
+            const columns = this.parseColumnDefinitions();
+            this.expect('OPERATOR', ')');
+            return {
+                type: 'CREATE',
+                table,
+                columns
+            };
+        } else {
+            throw new Error(`Unsupported CREATE target: ${target}`);
+        }
     }
 
     parseDelete() {

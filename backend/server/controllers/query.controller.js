@@ -1,11 +1,13 @@
 import { executeSQL, listTables, getTableInfo, dropTable } from '../../engine/index.js';
 import { analyzeQuery, generateExecutionPlan } from '../../engine/executor/queryPlanner.js';
 import { parse } from '../../engine/parser/parser.js';
+import storageManager from '../../engine/storage/storageManager.js';
 
 export const serverCheck = async (req, res) => {
     return res.status(200).json({ 
         message: "NexaDB Server is running",
         version: "1.0.0",
+        currentDatabase: storageManager.getCurrentDatabase(),
         endpoints: {
             query: "POST /api/query",
             tables: "GET /api/query/tables",
