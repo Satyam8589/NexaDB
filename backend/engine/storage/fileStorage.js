@@ -50,7 +50,6 @@ export const dropDatabase = (dbName) => {
     if (!fs.existsSync(dbPath)) {
         throw new Error(`Database '${dbName}' does not exist`);
     }
-    // Caution: fs.rmSync available in newer Node versions
     fs.rmSync(dbPath, { recursive: true, force: true });
     if (currentDb === dbName.toLowerCase()) {
         currentDb = 'default';
@@ -228,5 +227,4 @@ export const getTableStats = (tableName) => {
     }
 };
 
-// Initialize with default database
 ensureDataDirectory('default');
