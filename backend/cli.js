@@ -50,7 +50,6 @@ rl.on('line', (line) => {
     }
 
     try {
-        // Special commands
         if (input === '.exit') {
             console.log('Goodbye!');
             process.exit(0);

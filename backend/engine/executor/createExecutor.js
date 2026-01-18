@@ -15,6 +15,10 @@ export function executeCreate(ast) {
 
     storageManager.createTable(table, columns);
 
+    if (!storageManager.tableExists(table)) {
+        throw new Error(`Table '${table}' does not exist`);
+    }
+
     return {
         success: true,
         message: `Table '${table}' created successfully`,
