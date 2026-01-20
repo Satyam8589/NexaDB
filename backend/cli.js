@@ -132,7 +132,6 @@ rl.on('line', (line) => {
             return;
         }
 
-        // Execute SQL
         const startTime = Date.now();
         const result = executeSQL(input);
         const executionTime = Date.now() - startTime;
@@ -141,7 +140,6 @@ rl.on('line', (line) => {
             console.log('');
             
             if (result.data && Array.isArray(result.data)) {
-                // Determine if we should show headers (for SELECT queries)
                 const isQuery = result.columns && Array.isArray(result.columns);
                 
                 if (result.data.length > 0) {
@@ -152,7 +150,6 @@ rl.on('line', (line) => {
                     }
                     console.log(`\n${result.data.length} item(s) in result`);
                 } else if (isQuery) {
-                    // Show empty table with headers
                     displayTable([], result.columns);
                     console.log('\n0 row(s) returned (Empty table)');
                 } else {
@@ -190,7 +187,6 @@ function displayTable(rows, explicitColumns = null) {
 
     const columnWidths = {};
 
-    // Calculate column widths
     columns.forEach(col => {
         columnWidths[col] = Math.max(
             col.length,
@@ -198,12 +194,9 @@ function displayTable(rows, explicitColumns = null) {
         );
     });
 
-    // Print header
     console.log('┌' + columns.map(col => '─'.repeat(columnWidths[col] + 2)).join('┬') + '┐');
     console.log('│ ' + columns.map(col => col.padEnd(columnWidths[col])).join(' │ ') + ' │');
     console.log('├' + columns.map(col => '─'.repeat(columnWidths[col] + 2)).join('┼') + '┤');
-
-    // Print rows (if any)
     rows.forEach(row => {
         console.log('│ ' + columns.map(col => {
             const value = row[col] ?? 'NULL';
